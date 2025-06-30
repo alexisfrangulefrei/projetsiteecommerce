@@ -76,6 +76,9 @@ awslocal lambda create-event-source-mapping \
   --batch-size 1 \
   --event-source-arn "$SQS_QUEUE_ARN"
 
+# Verify the email identity
+awslocal ses verify-email-identity --email-address no-reply@localstack.cloud
+
 # https://docs.localstack.cloud/user-guide/aws/apigateway/
 echo "🌐 Création de l'API Gateway"
 

@@ -1,10 +1,7 @@
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 const { DynamoDBClient, PutItemCommand } = require('@aws-sdk/client-dynamodb');
 const { SESClient, SendEmailCommand } = require('@aws-sdk/client-ses');
-const https = require('https');
 const http = require('http');
-
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const s3 = new S3Client({
   endpoint: 'http://host.docker.internal:4566',
@@ -138,7 +135,7 @@ exports.handler = async (event) => {
             Body: { Text: { Data: emailBody } },
             Subject: { Data: `Order confirmation #${orderId}` }
           },
-          Source: 'no-reply@mywebsite.com'
+          Source: 'no-reply@localstack.cloud'
         }));
         console.log(`[Lambda] Order ${orderId} processed successfully.`);
         results.push({ orderId, success: true });
