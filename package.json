@@ -1,0 +1,13 @@
+{
+    "name": "localstack-tuto",
+    "version": "1.0.0",
+    "scripts": {
+        "zip": "bash ./zip-lambdas.sh",
+        "start": "npm run zip && docker-compose up",
+        "stop": "docker-compose down",
+        "clean": "rm -f lambdas/*.zip"
+    },
+    "dependencies": {
+        "node-fetch": "^2.7.0"
+    }
+}
