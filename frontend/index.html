@@ -105,22 +105,22 @@
       }
 
       const quantityInput = document.getElementById('quantite');
-let currentUnitPrice = 0;
+      let currentUnitPrice = 0;
 
-function updatePrice() {
-  const quantity = parseInt(quantityInput.value, 10) || 0;
-  priceInput.value = (currentUnitPrice * quantity).toFixed(2);
-}
+      function updatePrice() {
+        const quantity = parseInt(quantityInput.value, 10) || 0;
+        priceInput.value = (currentUnitPrice * quantity).toFixed(2);
+      }
 
-productSelect.addEventListener('change', (e) => {
-  const selectedOption = e.target.options[e.target.selectedIndex];
-  if (selectedOption.dataset.prix) {
-    currentUnitPrice = parseFloat(selectedOption.dataset.prix);
-  } else {
-    currentUnitPrice = 0;
-  }
-  updatePrice();
-});
+      productSelect.addEventListener('change', (e) => {
+        const selectedOption = e.target.options[e.target.selectedIndex];
+        if (selectedOption.dataset.prix) {
+          currentUnitPrice = parseFloat(selectedOption.dataset.prix);
+        } else {
+          currentUnitPrice = 0;
+        }
+        updatePrice();
+      });
 
 quantityInput.addEventListener('input', updatePrice);
     });

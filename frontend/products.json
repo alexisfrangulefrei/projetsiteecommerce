@@ -1,0 +1,52 @@
+[
+  {
+    "name": "Ordinateur Portable",
+    "prix": 1200,
+    "quantite": 12
+  },
+  {
+    "name": "Souris Gamer",
+    "prix": 75,
+    "quantite": 7
+  },
+  {
+    "name": "Clavier Mécanique",
+    "prix": 150,
+    "quantite": 15
+  },
+  {
+    "name": "Écran 4K 27 pouces",
+    "prix": 450,
+    "quantite": 9
+  },
+  {
+    "name": "Casque Audio sans fil",
+    "prix": 250,
+    "quantite": 18
+  },
+  {
+    "name": "Webcam HD",
+    "prix": 90,
+    "quantite": 5
+  },
+  {
+    "name": "Disque Dur Externe 2To",
+    "prix": 100,
+    "quantite": 20
+  },
+  {
+    "name": "Imprimante Laser",
+    "prix": 300,
+    "quantite": 11
+  },
+  {
+    "name": "Routeur Wi-Fi 6",
+    "prix": 180,
+    "quantite": 6
+  },
+  {
+    "name": "Chaise de Bureau Ergonomique",
+    "prix": 220,
+    "quantite": 3
+  }
+]
