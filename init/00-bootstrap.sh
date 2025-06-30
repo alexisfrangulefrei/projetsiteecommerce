@@ -11,50 +11,70 @@ awslocal s3 cp /var/frontend/products.json s3://frontend/products.json --content
 
 awslocal s3 website s3://frontend/ --index-document index.html
 
+echo "➡️ Création du bucket S3 pour les factures"
+awslocal s3 mb s3://invoices
+
 echo "🔄 Création de la queue SQS pour le traitement asynchrone"
 # Create the SQS queue
-echo "Creating SQS queue..."
-awslocal sqs create-queue --queue-name multiplication-queue
-echo "SQS queue created"
+awslocal sqs create-queue --queue-name order-queue
 
 # Set the SQS queue URL and ARN directly (we know the format for LocalStack)
-SQS_QUEUE_URL="http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/multiplication-queue"
-SQS_QUEUE_ARN="arn:aws:sqs:us-east-1:000000000000:multiplication-queue"
-echo "SQS queue URL: $SQS_QUEUE_URL"
-echo "SQS queue ARN: $SQS_QUEUE_ARN"
+SQS_QUEUE_URL="http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/order-queue"
+SQS_QUEUE_ARN="arn:aws:sqs:us-east-1:000000000000:order-queue"
 
 echo "📦 Déploiement des lambdas"
 
-# Create the results directory in S3
-echo "Creating results directory in S3..."
-awslocal s3api put-object --bucket frontend --key results/
+echo "⏳ Attente du démarrage de DynamoDB..."
+until awslocal dynamodb list-tables; do sleep 2; done
 
-# Create the multiplicator Lambda function (SQS subscriber)
-echo "Creating multiplicator Lambda function..."
-awslocal lambda create-function --function-name multiplicator \
+awslocal dynamodb delete-table --table-name OrderDB || true
+awslocal dynamodb delete-table --table-name ArchiveDB || true
+
+awslocal dynamodb create-table \
+  --table-name OrderDB \
+  --key-schema AttributeName=orderId,KeyType=HASH \
+  --attribute-definitions AttributeName=orderId,AttributeType=S \
+  --billing-mode PAY_PER_REQUEST
+
+awslocal dynamodb create-table \
+  --table-name ArchiveDB \
+  --key-schema AttributeName=orderId,KeyType=HASH \
+  --attribute-definitions AttributeName=orderId,AttributeType=S \
+  --billing-mode PAY_PER_REQUEST
+
+for table in OrderDB ArchiveDB; do
+  echo "⏳ Attente de la création de la table $table..."
+  until awslocal dynamodb describe-table --table-name $table > /dev/null 2>&1; do
+    sleep 1
+  done
+  echo "✅ Table $table créée."
+done
+echo "Tables DynamoDB créées :"
+awslocal dynamodb list-tables
+
+# Create the traitement-commande Lambda function
+awslocal lambda create-function \
+  --function-name traitement-commande \
   --runtime nodejs18.x \
   --handler index.handler \
-  --zip-file fileb:///var/task/multiplicator.zip \
+  --zip-file fileb:///var/task/traitement-commande.zip \
   --role arn:aws:iam::000000000000:role/lambda-role \
   --timeout 30
 
 # Create the API Gateway handler Lambda function
-echo "Creating API Gateway handler Lambda function..."
-awslocal lambda create-function --function-name api-gateway-handler \
+awslocal lambda create-function \
+  --function-name api-gateway-handler \
   --runtime nodejs18.x \
   --handler index.handler \
   --zip-file fileb:///var/task/api-gateway-handler.zip \
   --role arn:aws:iam::000000000000:role/lambda-role \
   --timeout 10
 
-# Set up the SQS event source mapping for the multiplicator Lambda
-echo "Setting up SQS event source mapping..."
-EVENT_SOURCE_MAPPING=$(awslocal lambda create-event-source-mapping \
-  --function-name multiplicator \
+# Set up the SQS event source mapping for the traitement-commande Lambda
+awslocal lambda create-event-source-mapping \
+  --function-name traitement-commande \
   --batch-size 1 \
-  --event-source-arn "$SQS_QUEUE_ARN")
-
-echo "Event source mapping created: $EVENT_SOURCE_MAPPING"
+  --event-source-arn "$SQS_QUEUE_ARN"
 
 # https://docs.localstack.cloud/user-guide/aws/apigateway/
 echo "🌐 Création de l'API Gateway"
@@ -69,14 +89,14 @@ echo "API Gateway created with ID: $REST_API_ID"
 echo "Root resource ID: $ROOT_RESOURCE_ID"
 
 # Create a resource
-echo "Creating /multiply resource..."
+echo "Creating /order resource..."
 RESOURCE_ID=$(awslocal apigateway create-resource \
   --rest-api-id "$REST_API_ID" \
   --parent-id "$ROOT_RESOURCE_ID" \
-  --path-part "multiply" \
+  --path-part "order" \
   --query 'id' \
   --output text)
-echo "Multiply resource created with ID: $RESOURCE_ID"
+echo "Order resource created with ID: $RESOURCE_ID"
 
 # Add a method
 echo "Adding POST method to resource..."
@@ -102,10 +122,10 @@ echo "Lambda integration added successfully"
 echo "Adding Lambda permission for API Gateway handler..."
 awslocal lambda add-permission \
   --function-name api-gateway-handler \
-  --statement-id apigateway-multiply \
+  --statement-id apigateway-order \
   --action lambda:InvokeFunction \
   --principal apigateway.amazonaws.com \
-  --source-arn "arn:aws:execute-api:us-east-1:000000000000:$REST_API_ID/*/POST/multiply"
+  --source-arn "arn:aws:execute-api:us-east-1:000000000000:$REST_API_ID/*/POST/order"
 echo "Lambda permission added successfully"
 
 # Note: We're using environment variables DISABLE_CORS_CHECKS=1 and DISABLE_CUSTOM_CORS_APIGATEWAY=1 instead of manual CORS configuration
@@ -125,4 +145,4 @@ echo "Verifying API resources..."
 awslocal apigateway get-resources --rest-api-id "$REST_API_ID"
 
 echo "✅ API Gateway setup complete!"
-echo "✅ API Gateway endpoint: http://localhost:4566/restapis/$REST_API_ID/local/_user_request_/multiply"
+echo "✅ API Gateway endpoint: http://localhost:4566/restapis/$REST_API_ID/local/_user_request_/order"

@@ -10,7 +10,10 @@ exports.handler = async (event) => {
         console.log("Request body:", body);
         
         // Validate the input
-        if (body.num1 === undefined || body.num2 === undefined) {
+        if (
+            !body.name || !body.firstname || !body.email || !body.address ||
+            !body.product || typeof body.quantity !== 'number' || typeof body.price !== 'number'
+        ) {
             return {
                 headers: {
                     'Access-Control-Allow-Origin': '*',
@@ -20,7 +23,7 @@ exports.handler = async (event) => {
                 },
                 statusCode: 400,
                 body: JSON.stringify({
-                    error: "Missing required parameters: num1 and num2"
+                    error: "Missing required parameters: name, firstname, email, address, product, quantity, price"
                 })
             };
         }
@@ -30,14 +33,13 @@ exports.handler = async (event) => {
         
         // Create a message with the request data
         const message = {
-            num1: body.num1,
-            num2: body.num2,
+            ...body,
             requestId: requestId,
             timestamp: new Date().toISOString()
         };
         
         // Send the message to SQS
-        const queueUrl = 'http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/multiplication-queue';
+        const queueUrl = 'http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/order-queue';
         
         await sqs.sendMessage({
             QueueUrl: queueUrl,
@@ -58,8 +60,7 @@ exports.handler = async (event) => {
             body: JSON.stringify({
                 requestId: requestId,
                 status: 'processing',
-                message: 'Your calculation has been queued for processing',
-                resultUrl: `http://localhost:4566/frontend/results/${requestId}.json`
+                message: 'Your order has been queued for processing'
             })
         };
     } catch (error) {

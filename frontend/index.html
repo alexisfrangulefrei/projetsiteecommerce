@@ -130,9 +130,7 @@ quantityInput.addEventListener('input', updatePrice);
     
     // Function to get the current API endpoint
     function getApiEndpoint() {
-      // Ceci devrait être mis à jour avec votre véritable point de terminaison d'API pour les commandes
-      return `http://localhost:4566/restapis/myid123/local/_user_request_/multiply`;
-      // return `http://localhost:4566/restapis/myid123/local/_user_request_/order`;
+      return `http://localhost:4566/restapis/myid123/local/_user_request_/order`;
     }
 
     form.addEventListener('submit', async (e) => {
@@ -140,17 +138,17 @@ quantityInput.addEventListener('input', updatePrice);
       result.textContent = 'Envoi en cours...';
       
       const formData = {
-        nom: document.getElementById('nom').value,
-        prenom: document.getElementById('prenom').value,
-        mail: document.getElementById('mail').value,
-        adresse: document.getElementById('adresse').value,
-        produit: document.getElementById('produit').value,
-        quantite: parseInt(document.getElementById('quantite').value, 10),
-        prix: parseFloat(document.getElementById('prix').value)
+        name: document.getElementById('nom').value,
+        firstname: document.getElementById('prenom').value,
+        email: document.getElementById('mail').value,
+        address: document.getElementById('adresse').value,
+        product: document.getElementById('produit').value,
+        quantity: parseInt(document.getElementById('quantite').value, 10),
+        price: parseFloat(document.getElementById('prix').value)
       };
 
       // Validation simple
-      if (!formData.nom || !formData.prenom || !formData.mail || !formData.adresse || !formData.produit || isNaN(formData.quantite) || isNaN(formData.prix)) {
+      if (!formData.name || !formData.firstname || !formData.email || !formData.address || !formData.product || isNaN(formData.quantity) || isNaN(formData.price)) {
         result.textContent = 'Veuillez remplir tous les champs correctement.';
         return;
       }

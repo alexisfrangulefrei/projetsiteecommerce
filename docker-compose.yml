@@ -5,7 +5,7 @@ services:
     ports:
       - "4566:4566"     # LocalStack Gateway
     environment:
-      - SERVICES=lambda,apigateway,s3,sqs
+      - SERVICES=lambda,apigateway,s3,sqs,dynamodb,ses
       - LAMBDA_EXECUTOR=local
       - DOCKER_HOST=unix:///var/run/docker.sock
       - DISABLE_CORS_CHECKS=1
@@ -17,5 +17,4 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./init:/etc/localstack/init/ready.d
       - ./frontend:/var/frontend
-
-
+      - ./localstack-data:/var/lib/localstack
