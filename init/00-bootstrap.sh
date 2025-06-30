@@ -7,7 +7,7 @@ awslocal s3 mb s3://frontend
 
 echo "📁 Upload du front sur S3"
 awslocal s3 cp /var/frontend/index.html s3://frontend/index.html --content-type text/html
-awslocal s3 cp /var/frontend/products.json s3://frontend/products.json --content-type application/json
+awslocal s3 cp /var/products.json s3://frontend/products.json --content-type application/json
 
 awslocal s3 website s3://frontend/ --index-document index.html
 

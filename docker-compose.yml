@@ -17,4 +17,5 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./init:/etc/localstack/init/ready.d
       - ./frontend:/var/frontend
+      - ./products.json:/var/products.json:ro
       - ./localstack-data:/var/lib/localstack
