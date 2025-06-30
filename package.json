@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "scripts": {
         "zip": "bash ./zip-lambdas.sh",
-        "start": "npm run zip && docker-compose up",
+        "start": "cp products.json frontend/products.json && npm run zip && docker-compose up",
         "stop": "docker-compose down",
         "clean": "rm -f lambdas/*.zip"
     },

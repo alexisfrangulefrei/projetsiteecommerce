@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Multiplicateur</title>
+  <title>Formulaire de Commande</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -17,7 +17,9 @@
       display: block;
       margin-bottom: 5px;
     }
-    input[type="number"] {
+    input[type="number"],
+    input[type="text"],
+    input[type="email"] {
       padding: 8px;
       width: 100%;
       box-sizing: border-box;
@@ -41,38 +43,115 @@
   </style>
 </head>
 <body>
-  <h1>Multiplicateur</h1>
-  <form id="multiply-form">
+  <h1>Formulaire de Commandee</h1>
+  <form id="order-form">
     <div class="form-group">
-      <label for="num1">Premier nombre:</label>
-      <input type="number" id="num1" required />
+      <label for="nom">Nom :</label>
+      <input type="text" id="nom" required />
     </div>
     <div class="form-group">
-      <label for="num2">Deuxième nombre:</label>
-      <input type="number" id="num2" required />
+      <label for="prenom">Prénom :</label>
+      <input type="text" id="prenom" required />
     </div>
-    <button type="submit">Calculer</button>
+    <div class="form-group">
+      <label for="mail">Mail :</label>
+      <input type="email" id="mail" required />
+    </div>
+    <div class="form-group">
+      <label for="adresse">Adresse :</label>
+      <input type="text" id="adresse" required />
+    </div>
+    <div class="form-group">
+      <label for="produit">Produit :</label>
+      <select id="produit" required>
+        <option value="">-- Choisissez un produit --</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="quantite">Quantité :</label>
+      <input type="number" id="quantite" required />
+    </div>
+    <div class="form-group">
+      <label for="prix">Prix :</label>
+      <input type="number" id="prix" step="0.01" required readonly />
+    </div>
+    <button type="submit">Envoyer</button>
   </form>
   <div id="result"></div>
 
   <script>
-    const form = document.getElementById('multiply-form');
+    document.addEventListener('DOMContentLoaded', async () => {
+      const productSelect = document.getElementById('produit');
+      const priceInput = document.getElementById('prix');
+      let products = [];
+
+      try {
+        const response = await fetch('products.json');
+        if (!response.ok) {
+          throw new Error('Impossible de charger les produits.');
+        }
+        products = await response.json();
+
+        products.forEach(product => {
+          const option = document.createElement('option');
+          option.value = product.name;
+          option.textContent = `${product.name} - ${product.prix}€`;
+          option.dataset.prix = product.prix;
+          productSelect.appendChild(option);
+        });
+
+      } catch (error) {
+        console.error('Erreur lors du chargement des produits:', error);
+      }
+
+      const quantityInput = document.getElementById('quantite');
+let currentUnitPrice = 0;
+
+function updatePrice() {
+  const quantity = parseInt(quantityInput.value, 10) || 0;
+  priceInput.value = (currentUnitPrice * quantity).toFixed(2);
+}
+
+productSelect.addEventListener('change', (e) => {
+  const selectedOption = e.target.options[e.target.selectedIndex];
+  if (selectedOption.dataset.prix) {
+    currentUnitPrice = parseFloat(selectedOption.dataset.prix);
+  } else {
+    currentUnitPrice = 0;
+  }
+  updatePrice();
+});
+
+quantityInput.addEventListener('input', updatePrice);
+    });
+
+    const form = document.getElementById('order-form');
     const result = document.getElementById('result');
     
     // Function to get the current API endpoint
     function getApiEndpoint() {
+      // Ceci devrait être mis à jour avec votre véritable point de terminaison d'API pour les commandes
       return `http://localhost:4566/restapis/myid123/local/_user_request_/multiply`;
+      // return `http://localhost:4566/restapis/myid123/local/_user_request_/order`;
     }
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      result.textContent = 'Calcul en cours...';
+      result.textContent = 'Envoi en cours...';
       
-      const num1 = parseFloat(document.getElementById('num1').value);
-      const num2 = parseFloat(document.getElementById('num2').value);
-      
-      if (isNaN(num1) || isNaN(num2)) {
-        result.textContent = 'Veuillez entrer des nombres valides';
+      const formData = {
+        nom: document.getElementById('nom').value,
+        prenom: document.getElementById('prenom').value,
+        mail: document.getElementById('mail').value,
+        adresse: document.getElementById('adresse').value,
+        produit: document.getElementById('produit').value,
+        quantite: parseInt(document.getElementById('quantite').value, 10),
+        prix: parseFloat(document.getElementById('prix').value)
+      };
+
+      // Validation simple
+      if (!formData.nom || !formData.prenom || !formData.mail || !formData.adresse || !formData.produit || isNaN(formData.quantite) || isNaN(formData.prix)) {
+        result.textContent = 'Veuillez remplir tous les champs correctement.';
         return;
       }
 
@@ -84,7 +163,7 @@
             'Content-Type': 'application/json',
             'Origin': 'http://localhost:8080'
           },
-          body: JSON.stringify({ num1, num2 })
+          body: JSON.stringify(formData)
         });
 
         if (!response.ok) {
@@ -92,10 +171,10 @@
         } 
 
         const data = await response.json();
-        result.textContent = data.result;
+        result.textContent = "Commande envoyée avec succès : " + JSON.stringify(data);
       } catch (error) {
         console.error(error);
-        result.textContent = "Erreur!";
+        result.textContent = "Erreur lors de l'envoi de la commande.";
       }
     });
   </script>
