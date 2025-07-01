@@ -7,6 +7,23 @@ exports.handler = async (event) => {
     console.log("[API-GATEWAY-HANDLER] API Gateway handler received event:", JSON.stringify(event));
     
     try {
+        // Lire la clé d'idempotence dans les headers
+        const idempotenceKey = event.headers && (event.headers['Idempotence-Key'] || event.headers['idempotence-key']);
+        if (!idempotenceKey) {
+            return {
+                headers: {
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,Idempotence-Key',
+                    'Access-Control-Allow-Methods': 'OPTIONS,POST',
+                    'Content-Type': 'application/json'
+                },
+                statusCode: 400,
+                body: JSON.stringify({
+                    error: "Missing Idempotence-Key header"
+                })
+            };
+        }
+        
         // Parse the request body from the incoming event
         const body = JSON.parse(event.body);
         
@@ -31,7 +48,7 @@ exports.handler = async (event) => {
         }
         
         // Generate a unique request ID for tracking
-        const requestId = Date.now().toString() + '-' + Math.random().toString(36).substring(2, 15);
+        const requestId = idempotenceKey || Date.now().toString() + '-' + Math.random().toString(36).substring(2, 15);
         
         // Create a message object to send to SQS
         const message = {
@@ -55,7 +72,7 @@ exports.handler = async (event) => {
         return {
             headers: {
                 'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
+                'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,Idempotence-Key',
                 'Access-Control-Allow-Methods': 'OPTIONS,POST',
                 'Content-Type': 'application/json'
             },

@@ -65,8 +65,21 @@ exports.handler = async (event) => {
         // Parse the SQS message body
         const messageBody = JSON.parse(record.body);
         console.log('[ORDER-PROCESSING] Processing message for product :', messageBody.product);
-        const { name, firstname, email, address, product, quantity, price } = messageBody;
-        const orderId = generateOrderId();
+        const { name, firstname, email, address, product, quantity, price, requestId } = messageBody;
+        const orderId = requestId || generateOrderId();
+        if (requestId) {
+          console.log(`[ORDER-PROCESSING] Order ID from idempotence key: ${requestId}`);
+          // Check if the order already exists in the database
+          const dynamoResult = await dynamo.send(new GetItemCommand({
+            TableName: 'OrderDB',
+            Key: { orderId: { S: requestId } }
+          }));
+          if (dynamoResult.Item) {
+            console.log(`[ORDER-PROCESSING] Order already exists in the database: ${requestId}`);
+            results.push({ orderId: requestId, success: true });
+            continue;
+          }
+        }
         const orderDate = new Date().toISOString();
         const estimatedDeliveryDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
         // Check product stock

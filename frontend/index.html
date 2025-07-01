@@ -72,7 +72,7 @@
     </div>
     <div class="form-group">
       <label for="quantite">Quantité :</label>
-      <input type="number" id="quantite" required />
+      <input type="number" id="quantite" required min="1" />
     </div>
     <div class="form-group">
       <label for="prix">Prix :</label>
@@ -143,10 +143,25 @@
       return `http://localhost:4566/restapis/myid123/local/_user_request_/order`;
     }
 
+    // Fonction utilitaire pour générer une clé d'idempotence (UUID v4 simplifié)
+    function generateIdempotenceKey() {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    }
+
     // Handle form submission
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       result.textContent = 'Envoi en cours...';
+      
+      // Gestion de la clé d'idempotence
+      let idempotenceKey = localStorage.getItem('idempotenceKey');
+      if (!idempotenceKey) {
+        idempotenceKey = generateIdempotenceKey();
+        localStorage.setItem('idempotenceKey', idempotenceKey);
+      }
       
       // Gather form data
       const formData = {
@@ -172,7 +187,8 @@
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Origin': 'http://localhost:8080'
+            'Origin': 'http://localhost:8080',
+            'Idempotence-Key': idempotenceKey
           },
           body: JSON.stringify(formData)
         });
@@ -181,6 +197,8 @@
           throw new Error(`HTTP error! status: ${response.status}`);
         } 
 
+        // Si la requête est acceptée, on supprime la clé d'idempotence
+        localStorage.removeItem('idempotenceKey');
         // Show the API response to the user
         const data = await response.json();
         result.textContent = "Commande envoyée avec succès : " + JSON.stringify(data);
