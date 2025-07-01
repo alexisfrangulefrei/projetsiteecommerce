@@ -61,7 +61,7 @@ exports.handler = async (event) => {
     for (const record of event.Records) {
       try {
         const messageBody = JSON.parse(record.body);
-        console.log('[Lambda] Processing message:', messageBody);
+        console.log('[Lambda] Processing message for product :', messageBody.product);
         const { name, firstname, email, address, product, quantity, price } = messageBody;
         const orderId = generateOrderId();
         const orderDate = new Date().toISOString();

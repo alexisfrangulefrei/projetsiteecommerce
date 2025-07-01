@@ -52,6 +52,54 @@ done
 echo "Tables DynamoDB créées :"
 awslocal dynamodb list-tables
 
+# Create the OrderEventsDB table to store events
+awslocal dynamodb create-table \
+  --table-name OrderEventsDB \
+  --key-schema AttributeName=eventId,KeyType=HASH \
+  --attribute-definitions AttributeName=eventId,AttributeType=S \
+  --billing-mode PAY_PER_REQUEST
+
+echo "⏳ Waiting for OrderEventsDB table creation..."
+until awslocal dynamodb describe-table --table-name OrderEventsDB > /dev/null 2>&1; do
+  sleep 1
+done
+echo "✅ OrderEventsDB table created."
+
+# Deploy the transfer-order-event lambda
+awslocal lambda create-function \
+  --function-name transfer-order-event \
+  --runtime nodejs18.x \
+  --handler index.handler \
+  --zip-file fileb:///var/task/transfer-order-event.zip \
+  --role arn:aws:iam::000000000000:role/lambda-role \
+  --timeout 30 \
+
+# Enable stream
+awslocal dynamodb update-table \
+  --table-name OrderDB \
+  --stream-specification StreamEnabled=true,StreamViewType=NEW_IMAGE
+
+sleep 5 # (optionnel mais aide parfois)
+
+# Debug: show table description
+echo "Describe OrderDB:"
+awslocal dynamodb describe-table --table-name OrderDB
+
+# Wait for stream ARN
+ORDERDB_STREAM_ARN=""
+while [ -z "$ORDERDB_STREAM_ARN" ] || [ "$ORDERDB_STREAM_ARN" = "None" ]; do
+  ORDERDB_STREAM_ARN=$(awslocal dynamodb describe-table --table-name OrderDB --query 'Table.LatestStreamArn' --output text)
+  echo "Waiting for OrderDB stream ARN..."
+  sleep 2
+done
+echo "OrderDB stream ARN: $ORDERDB_STREAM_ARN"
+
+# Map the OrderDB stream to the transfer-order-event lambda
+awslocal lambda create-event-source-mapping \
+  --function-name transfer-order-event \
+  --event-source-arn "$ORDERDB_STREAM_ARN" \
+  --starting-position LATEST
+
 # Create the traitement-commande Lambda function
 awslocal lambda create-function \
   --function-name traitement-commande \
