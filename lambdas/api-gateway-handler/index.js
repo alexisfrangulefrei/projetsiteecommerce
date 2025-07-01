@@ -9,7 +9,6 @@ exports.handler = async (event) => {
     try {
         // Parse the request body from the incoming event
         const body = JSON.parse(event.body);
-        console.log("[API-GATEWAY-HANDLER] Request body:", body);
         
         // Validate the input fields (all are required)
         if (
