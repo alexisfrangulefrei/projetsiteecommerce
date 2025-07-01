@@ -2,6 +2,10 @@
 
 set -e
 
+export AWS_ACCESS_KEY_ID=test
+export AWS_SECRET_ACCESS_KEY=test
+export AWS_DEFAULT_REGION=us-east-1
+
 echo "➡️ Création du bucket S3 pour le front"
 awslocal s3 mb s3://frontend
 
@@ -13,6 +17,9 @@ awslocal s3 website s3://frontend/ --index-document index.html
 
 echo "➡️ Création du bucket S3 pour les factures"
 awslocal s3 mb s3://invoices
+
+echo "➡️ Création du bucket S3 pour les rapports analytiques"
+awslocal s3 mb s3://analytics-reports
 
 echo "🔄 Création de la queue SQS pour le traitement asynchrone"
 # Create the SQS queue
@@ -126,6 +133,33 @@ awslocal lambda create-event-source-mapping \
 
 # Verify the email identity
 awslocal ses verify-email-identity --email-address no-reply@localstack.cloud
+
+# Create the generate-analytics-reports Lambda function
+awslocal lambda create-function \
+  --function-name generate-analytics-reports \
+  --runtime nodejs18.x \
+  --handler index.handler \
+  --zip-file fileb:///var/task/generate-analytics-reports.zip \
+  --role arn:aws:iam::000000000000:role/lambda-role \
+  --timeout 10
+
+# Create event bridge rule
+aws --endpoint-url=http://localhost:4566 --region us-east-1 events put-rule \
+  --name weekly-analytics-report \
+  --schedule-expression "rate(1 minute)"
+
+# Give permission to EventBridge to invoke the lambda
+aws --endpoint-url=http://localhost:4566 --region us-east-1 lambda add-permission \
+  --function-name generate-analytics-reports \
+  --statement-id eventbridge-invoke \
+  --action 'lambda:InvokeFunction' \
+  --principal events.amazonaws.com \
+  --source-arn arn:aws:events:us-east-1:000000000000:rule/weekly-analytics-report
+
+# Link the rule to the lambda
+aws --endpoint-url=http://localhost:4566 --region us-east-1 events put-targets \
+  --rule weekly-analytics-report \
+  --targets "Id"="1","Arn"="arn:aws:lambda:us-east-1:000000000000:function:generate-analytics-reports"
 
 # https://docs.localstack.cloud/user-guide/aws/apigateway/
 echo "🌐 Création de l'API Gateway"
