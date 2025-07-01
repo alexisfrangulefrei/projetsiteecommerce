@@ -1,4 +1,5 @@
 /node_modules
 /lambdas/api-gateway-handler/node_modules
 /lambdas/transfer-order-event/node_modules
-/lambdas/traitement-commande/node_modules
+/lambdas/order-processing/node_modules
+/lambdas/generate-analytics-reports/node_modules

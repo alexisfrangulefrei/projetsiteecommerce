@@ -6,8 +6,10 @@ const dynamo = new DynamoDBClient({
   credentials: { accessKeyId: 'test', secretAccessKey: 'test' }
 });
 
+// Lambda handler to transfer order events from DynamoDB stream to OrderEventsDB
 exports.handler = async (event) => {
   try {
+    // Iterate over each record in the DynamoDB stream event
     for (const record of event.Records) {
       if (record.eventName === 'INSERT') {
         const newImage = record.dynamodb.NewImage;
@@ -18,16 +20,18 @@ exports.handler = async (event) => {
           status: { S: newImage.status.S },
           eventDate: { S: newImage.orderDate.S }
         };
-        console.log(`[DynamoDB] Inserting event: ${eventId}`);
+        // Log the insertion of a new event
+        console.log(`[TRANSFER-ORDER-EVENT] Inserting event: ${eventId}`);
         await dynamo.send(new PutItemCommand({
           TableName: 'OrderEventsDB',
           Item: orderEvent
         }));
-        console.log(`[DynamoDB] Event inserted: ${eventId}`);
+        console.log(`[TRANSFER-ORDER-EVENT] Event inserted: ${eventId}`);
       }
     }
   } catch (err) {
-    console.error('transfer-order-event Lambda error:', err);
+    // Log any error during the transfer process
+    console.error('[TRANSFER-ORDER-EVENT] Lambda error:', err);
     throw err;
   }
 };

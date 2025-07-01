@@ -112,12 +112,12 @@ awslocal lambda create-event-source-mapping \
   --event-source-arn "$ORDERDB_STREAM_ARN" \
   --starting-position LATEST
 
-# Create the traitement-commande Lambda function
+# Create the order-processing Lambda function
 awslocal lambda create-function \
-  --function-name traitement-commande \
+  --function-name order-processing \
   --runtime nodejs18.x \
   --handler index.handler \
-  --zip-file fileb:///var/task/traitement-commande.zip \
+  --zip-file fileb:///var/task/order-processing.zip \
   --role arn:aws:iam::000000000000:role/lambda-role \
   --timeout 30
 
@@ -130,9 +130,9 @@ awslocal lambda create-function \
   --role arn:aws:iam::000000000000:role/lambda-role \
   --timeout 10
 
-# Set up the SQS event source mapping for the traitement-commande Lambda
+# Set up the SQS event source mapping for the order-processing Lambda
 awslocal lambda create-event-source-mapping \
-  --function-name traitement-commande \
+  --function-name order-processing \
   --batch-size 1 \
   --event-source-arn "$SQS_QUEUE_ARN"
 

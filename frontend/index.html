@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>Formulaire de Commande</title>
   <style>
+    /* Main page styling for a clean and centered form */
     body {
       font-family: Arial, sans-serif;
       max-width: 600px;
@@ -44,6 +45,7 @@
 </head>
 <body>
   <h1>Formulaire de Commandee</h1>
+  <!-- Order form for e-commerce -->
   <form id="order-form">
     <div class="form-group">
       <label for="nom">Nom :</label>
@@ -63,6 +65,7 @@
     </div>
     <div class="form-group">
       <label for="produit">Produit :</label>
+      <!-- Product dropdown will be populated dynamically -->
       <select id="produit" required>
         <option value="">-- Choisissez un produit --</option>
       </select>
@@ -80,18 +83,21 @@
   <div id="result"></div>
 
   <script>
+    // Wait for the DOM to be fully loaded
     document.addEventListener('DOMContentLoaded', async () => {
       const productSelect = document.getElementById('produit');
       const priceInput = document.getElementById('prix');
       let products = [];
 
       try {
+        // Fetch the list of products from the local JSON file
         const response = await fetch('products.json');
         if (!response.ok) {
           throw new Error('Impossible de charger les produits.');
         }
         products = await response.json();
 
+        // Populate the product dropdown with options
         products.forEach(product => {
           const option = document.createElement('option');
           option.value = product.name;
@@ -107,11 +113,13 @@
       const quantityInput = document.getElementById('quantite');
       let currentUnitPrice = 0;
 
+      // Update the total price when the product or quantity changes
       function updatePrice() {
         const quantity = parseInt(quantityInput.value, 10) || 0;
         priceInput.value = (currentUnitPrice * quantity).toFixed(2);
       }
 
+      // When a product is selected, update the unit price
       productSelect.addEventListener('change', (e) => {
         const selectedOption = e.target.options[e.target.selectedIndex];
         if (selectedOption.dataset.prix) {
@@ -122,21 +130,25 @@
         updatePrice();
       });
 
-quantityInput.addEventListener('input', updatePrice);
+      // When the quantity changes, update the total price
+      quantityInput.addEventListener('input', updatePrice);
     });
 
     const form = document.getElementById('order-form');
     const result = document.getElementById('result');
     
-    // Function to get the current API endpoint
+    // Function to get the current API endpoint for order submission
     function getApiEndpoint() {
+      // This endpoint is proxied by LocalStack API Gateway
       return `http://localhost:4566/restapis/myid123/local/_user_request_/order`;
     }
 
+    // Handle form submission
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       result.textContent = 'Envoi en cours...';
       
+      // Gather form data
       const formData = {
         name: document.getElementById('nom').value,
         firstname: document.getElementById('prenom').value,
@@ -147,7 +159,7 @@ quantityInput.addEventListener('input', updatePrice);
         price: parseFloat(document.getElementById('prix').value)
       };
 
-      // Validation simple
+      // Simple validation for required fields
       if (!formData.name || !formData.firstname || !formData.email || !formData.address || !formData.product || isNaN(formData.quantity) || isNaN(formData.price)) {
         result.textContent = 'Veuillez remplir tous les champs correctement.';
         return;
@@ -155,6 +167,7 @@ quantityInput.addEventListener('input', updatePrice);
 
       try {
         result.innerHTML = '<em>Envoi de la requête...</em>';
+        // Send the order to the backend API (API Gateway -> Lambda)
         const response = await fetch(getApiEndpoint(), {
           method: 'POST',
           headers: {
@@ -168,6 +181,7 @@ quantityInput.addEventListener('input', updatePrice);
           throw new Error(`HTTP error! status: ${response.status}`);
         } 
 
+        // Show the API response to the user
         const data = await response.json();
         result.textContent = "Commande envoyée avec succès : " + JSON.stringify(data);
       } catch (error) {
