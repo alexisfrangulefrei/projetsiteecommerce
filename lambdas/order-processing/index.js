@@ -1,5 +1,5 @@
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
-const { DynamoDBClient, PutItemCommand } = require('@aws-sdk/client-dynamodb');
+const { DynamoDBClient, PutItemCommand, GetItemCommand } = require('@aws-sdk/client-dynamodb');
 const { SESClient, SendEmailCommand } = require('@aws-sdk/client-ses');
 const http = require('http');
 
