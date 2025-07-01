@@ -22,8 +22,13 @@ echo "➡️ Création du bucket S3 pour les rapports analytiques"
 awslocal s3 mb s3://analytics-reports
 
 echo "🔄 Création de la queue SQS pour le traitement asynchrone"
+
 # Create the SQS queue
-awslocal sqs create-queue --queue-name order-queue
+awslocal sqs create-queue --queue-name dead-letter-queue
+
+# Create the SQS queue
+awslocal sqs create-queue --queue-name order-queue \
+  --attributes '{"RedrivePolicy": "{\"deadLetterTargetArn\":\"arn:aws:sqs:us-east-1:000000000000:dead-letter-queue\",\"maxReceiveCount\":3}"}'
 
 # Set the SQS queue URL and ARN directly (we know the format for LocalStack)
 SQS_QUEUE_URL="http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/order-queue"
