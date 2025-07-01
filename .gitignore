@@ -1,4 +1,2 @@
-/node_modules
-/lambdas/api-gateway-handler/node_modules
-/lambdas/transfer-order-event/node_modules
-/lambdas/traitement-commande/node_modules
+node_modules
+command.sh

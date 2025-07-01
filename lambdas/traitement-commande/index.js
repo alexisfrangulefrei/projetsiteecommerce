@@ -140,8 +140,8 @@ exports.handler = async (event) => {
         console.log(`[Lambda] Order ${orderId} processed successfully.`);
         results.push({ orderId, success: true });
       } catch (error) {
-        console.error(`[Lambda] Order processing error:`, error);
-        results.push({ orderId: 'unknown', success: false, error: error.message });
+        console.error(`[Lambda] Order processing error:`, error, record.messageId);
+        results.push({ orderId: record.messageId, success: false, error: error.message });
       }
     }
     return {
